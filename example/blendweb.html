@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+          name="viewport">
+    <meta content="ie=edge" http-equiv="X-UA-Compatible">
+    <title>Document</title>
+    <style>
+        #scene {
+            max-width: 600px;
+            width: 100%;
+            height: 400px;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+<div id="scene">
+
+</div>
+<script>
+    class Point {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+        }
+
+        getRotatedPosition(centerX, centerY, angle) {
+            const dx = this.x - centerX;
+            const dy = this.y - centerY;
+            const _x = dx * Math.cos(angle) + dy * Math.sin(angle) + centerX;
+            const _y = -dx * Math.sin(angle) + dy * Math.cos(angle) + centerY;
+            return new Point(_x, _y);
+        }
+    }
+
+    class Flamme {
+        constructor(x, y, radius, rotation) {
+            this.origin = new Point(x, radius / 3 + y);
+            this.center = new Point(radius * 5 / 4 + x, radius + y);
+            this.radius = radius;
+            this.color = 'black';
+            this.rotation = rotation;
+            this.offsetX = 0;
+            this.offsetY = 0;
+        }
+
+        draw(ctx) {
+            const circleDefPoint = new Point(this.center.x - this.radius, this.center.y);
+            const startCirclePoint = circleDefPoint.getRotatedPosition(this.center.x, this.center.y, -Math.PI / 4);
+            ctx.save();
+            ctx.translate(this.center.x, this.center.y);
+            ctx.rotate(this.rotation);
+            ctx.translate(-this.center.x, -this.center.y);
+            ctx.translate(this.offsetX, this.offsetY);
+            ctx.beginPath();
+            ctx.moveTo(this.origin.x, this.origin.y);
+            ctx.quadraticCurveTo(circleDefPoint.x - this.radius / 3, circleDefPoint.y, startCirclePoint.x, startCirclePoint.y);
+            ctx.arc(this.center.x, this.center.y, this.radius, -Math.PI * 3 / 4, Math.PI * 3 / 4);
+            ctx.quadraticCurveTo(circleDefPoint.x - this.radius / 3, circleDefPoint.y, this.origin.x, this.origin.y);
+            ctx.fillStyle = this.color;
+            ctx.fill();
+            ctx.closePath();
+            ctx.restore();
+        }
+    }
+
+    const container = document.getElementById("scene");
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
+    container.appendChild(canvas);
+    context.globalCompositeOperation = 'lighter';
+    // context.globalCompositeOperation = 'screen';
+    const draws = [];
+    const fl1 = new Flamme(100, 100, 40, -Math.PI / 3);
+    fl1.color = '#AFCA15';
+    const fl2 = new Flamme(120, 60, 40, Math.PI / 2);
+    fl2.color = '#13A4DE';
+    const fl3 = new Flamme(140, 100, 40, Math.PI / 6 + Math.PI);
+    fl3.color = '#E6421C';
+    context.imageSmoothingEnabled = false;
+    draws.push(fl1, fl2, fl3);
+    let speed = 0.15;
+    const animation = () => {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        draws.forEach((d) => {
+            d.draw(context);
+            if (d.offsetY > 50) {
+                speed = -0.15;
+            }
+            if (d.offsetY >= 0) {
+                d.rotation += speed;
+                d.offsetY += speed;
+            } else {
+                speed = 0.15;
+                d.offsetY = 0;
+            }
+        });
+        requestAnimationFrame(animation);
+    };
+    requestAnimationFrame(animation)
+
+</script>
+</body>
+</html>

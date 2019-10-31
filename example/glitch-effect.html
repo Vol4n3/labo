@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="ie=edge" http-equiv="X-UA-Compatible">
+    <title>Document</title>
+    <style>
+        body {
+            background: #333;
+        }
+
+        [data-glitch] {
+            position: relative;
+            display: inline-block;
+            z-index: 0;
+            font-family: sans-serif;
+            font-size: 2rem;
+            color: white;
+            padding: 0 20px;
+            --xb: 0;
+            --yb: 0;
+            --xr: 0;
+            --yr: 0;
+        }
+
+        [data-glitch]:after {
+            content: attr(data-glitch);
+            position: absolute;
+            left: var(--xb);
+            top: var(--yb);
+            color: #2af;
+            z-index: -1;
+        }
+
+        [data-glitch]:before {
+            content: attr(data-glitch);
+            position: absolute;
+            left: var(--xr);
+            top: var(--yr);
+            color: #f2a;
+            z-index: -2;
+        }
+    </style>
+</head>
+<body>
+<input type="text" placeholder="saisir un text" oninput="setTextView(this)">
+    <div style="display: flex; justify-content: center">
+        <div id="view" data-glitch="G l i t c h">G l i t c h</div>
+    </div>
+</body>
+<script>
+    window.setTextView = (elInput)=>{
+        document.getElementById('view').setAttribute('data-glitch',elInput.value);
+    };
+    const glitchElement = document.querySelectorAll('[data-glitch]');
+    const cssVars = [
+        {tag: "--xb", type: 'x', ratio: 2},
+        {tag: "--yb", type: 'y', ratio: 2},
+        {tag: "--xr", type: 'x', ratio: 1},
+        {tag: "--yr", type: 'y', ratio: 1}];
+    const randomGlitchText = () => {
+        for (const glitch of glitchElement) {
+            const origin = glitch.getAttribute('data-glitch');
+            const randomChar = String.fromCharCode(crypto.getRandomValues(new Uint8Array(1))[0]);
+            const randomPos = Math.round(Math.random() * (origin.length - 1));
+            glitch.innerText = glitch.innerText.substr(0, randomPos) + randomChar + glitch.innerText.substr(randomPos + 1);
+            setTimeout(() => {
+                glitch.innerText = origin;
+            }, Math.round(Math.random() * 200))
+        }
+        setTimeout(randomGlitchText, Math.round(Math.random() * 1500));
+    };
+    setTimeout(randomGlitchText, 1000);
+    const randomGlitchPos = () => {
+        for (const glitch of glitchElement) {
+            const x = Math.round(Math.random() * 6 - 3);
+            const y = Math.round(Math.random() * 6 - 3);
+            for (const cssVar of cssVars) {
+                if (cssVar.type === 'x') {
+                    glitch.style.setProperty(cssVar.tag, (20 + (x / cssVar.ratio)) + 'px');
+                } else {
+                    glitch.style.setProperty(cssVar.tag, (y / cssVar.ratio) + 'px');
+                }
+            }
+        }
+        setTimeout(randomGlitchPos, Math.round(Math.random() * 200))
+    };
+    setTimeout(randomGlitchPos, 100)
+
+</script>
+</html>

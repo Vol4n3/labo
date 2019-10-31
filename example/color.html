@@ -1,0 +1,318 @@
+<head>
+    <style>
+        .view{
+        display: inline-block;
+        width: 40px;
+        height: 40px;
+    }
+    </style>
+</head>
+
+<body>
+    <button type="button" onclick="addWaveLength()">Add waveLength</button>
+    <input type="range" min="0" max="100" step="0.1" value="50" oninput="changeLuminosity(this)">
+    <div id="container">
+    </div>
+    <div>
+        result merge :
+        <div id="result-color" class="view">
+
+        </div>
+        
+    </div>
+    <svg><a></a></svg>
+    <svg>
+        <path stroke-width="6" stroke="black" fill="white"  d="M10,10H100V100H10Z"></path>
+    </svg>
+    <script type="text/javascript">
+        (() => {
+
+            const coefSensibility = 0.0001; // correspondant à l'amplitude de sensibilité d'un capteur
+            let luminosity = 0.5;
+            window.changeLuminosity = function (input) {
+                luminosity = parseInt(input.value, 10) / 100;
+                const inputs = document.querySelectorAll('.input-range');
+                for (let i = 0; i < inputs.length; i++) {
+                    inputs[i].dispatchEvent(new Event('input'));
+                }
+
+            }
+            class Color {
+                constructor() {
+                    this._red = 0;
+                    this._green = 0;
+                    this._blue = 0;
+                    this._hue = 0;
+                    this._saturation = 0;
+                    this._lightness = 0;
+                    this.opacity = 1;
+                }
+                setRGB(r, g, b) {
+                    this._red = r;
+                    this._green = g;
+                    this._blue = b;
+                    this.updateHSL();
+                }
+                setHSL(h, s, l) {
+                    this._hue = h;
+                    this._saturation = saturation;
+                    this._lightness = lightness;
+                    this.setRGB();
+                }
+                getCssRGB(alpha) {
+                    if (alpha) {
+                        return `rgba(${this.red},${this.green},${this.blue},${this.opacity})`;
+                    }
+                    return `rgb(${this.red},${this.green},${this.blue})`;
+                }
+                getCssHSL(alpha) {
+                    if (alpha) {
+                        return `hsla(${this.hue},${this.saturation}%,${this.lightness}%,${this.opacity})`;
+                    }
+                    return `hsl(${this.hue},${this.saturation}%,${this.lightness}%)`;
+                }
+                getCssHexa() {
+                    let hexa = '';
+                    let r = this.red.toString(16);
+                    let g = this.green.toString(16);
+                    let b = this.blue.toString(16);
+                    hexa += (r.length > 1) ? r : '0' + r;
+                    hexa += (g.length > 1) ? g : '0' + g;
+                    hexa += (b.length > 1) ? b : '0' + b;
+                    return hexa;
+                }
+                set red(value) {
+                    this._red = value / 255;
+                    this.updateHSL();
+                }
+                get red() {
+                    return Math.round(this._red * 255);
+                }
+                set green(value) {
+                    this._green = value / 255;
+                    this.updateHSL();
+                }
+                get green() {
+                    return Math.round(this._green * 255);
+                }
+                set blue(value) {
+                    this._blue = value / 255;
+                    this.updateHSL();
+                }
+                get blue() {
+                    return Math.round(this._blue * 255);
+                }
+                set hue(value) {
+                    this._hue = value / 360;
+                    this.updateRGB();
+                }
+                get hue() {
+                    return Math.round(this._hue * 360);
+                }
+                set saturation(value) {
+                    this._saturation = value / 100;
+                    this.updateRGB();
+                }
+                get saturation() {
+                    return Math.round(this._saturation * 100);
+                }
+                set lightness(value) {
+                    this._lightness = value / 100;
+                    this.updateRGB();
+                }
+                get lightness() {
+                    return Math.round(this._lightness * 100);
+                }
+                updateRGB() {
+                    if (this._saturation === 0) {
+                        this._red = this._green = this._blue = this._lightness;
+                        return;
+                    }
+                    const q = (this._lightness < 0.5) ?
+                        this._lightness * (1 + this._saturation) :
+                        this._lightness + this._saturation - this._lightness * this._saturation;
+                    const p = 2 * this._lightness - q;
+                    const transform = (p, q, t) => {
+                        if (t < 0) t += 1;
+                        if (t > 1) t -= 1;
+                        if (t < 1 / 6) return p + (q - p) * 6 * t;
+                        if (t < 1 / 2) return q;
+                        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+                        return p;
+                    }
+                    this._red = transform(p, q, this._hue + 1 / 3);
+                    this._green = transform(p, q, this._hue);
+                    this._blue = transform(p, q, this._hue - 1 / 3);
+                }
+                updateHSL() {
+                    const max = Math.max(this._red, this._green, this._blue);
+                    const min = Math.min(this._red, this._green, this._blue);
+                    this._lightness = (max + min) / 2;
+                    if (max === min) {
+                        this._saturation = 0;
+                    } else {
+                        const delta = max - min;
+                        this._saturation = (this._lightness > 0.5) ?
+                            delta / (2 - max - min) :
+                            delta / (max + min);
+                        switch (max) {
+                            case this._red:
+                                this._hue = (this._green - this._blue) / delta + (this._green < this._blue ? 6 : 0);
+                                break;
+                            case this._green:
+                                this._hue = (this._blue - this._red) / delta + 2;
+                                break;
+                            case this._blue:
+                                this._hue = (this._red - this._green) / delta + 4;
+                                break;
+                        }
+                        this._hue /= 6;
+                    }
+                }
+            }
+            class ColorsBlender {
+                constructor(colors) {
+                    this.colors = colors;
+                }
+                blendAlpha() {
+                    let blend;
+                    const blender = (c1, c2) => {
+                        const color = new Color();
+                        color.opacity = 1 - (1 - c1.opacity) * (1 - c2.opacity);
+                        if (color.opacity < 1.0e-6) return color;
+                        color.setRGB(
+                            c1._red * c1.opacity / color.opacity + c2._red * c2.opacity * (1 - c1.opacity) / color.opacity,
+                            c1._green * c1.opacity / color.opacity + c2._green * c2.opacity * (1 - c1.opacity) / color.opacity,
+                            c1._blue * c1.opacity / color.opacity + c2._blue * c2.opacity * (1 - c1.opacity) / color.opacity
+                        );
+                        return color;
+                    }
+                    for (let i = 0; i < this.colors.length; i++) {
+                        if (!blend) {
+                            blend = this.colors[i];
+                        } else {
+                            blend = blender(this.colors[i], blend);
+                        }
+                    }
+                    return blend;
+                }
+                blendOpac() {
+                    const color = new Color();
+                    const count = this.colors.length;
+                    let red = 0;
+                    let green = 0;
+                    let blue = 0;
+                    for (let i = 0; i < count; i++) {
+                        red += this.colors[i]._red;
+                        green += this.colors[i]._green;
+                        blue += this.colors[i]._blue;
+                    }
+                    color.setRGB(red / count, green / count, blue / count);
+                    return color;
+                }
+                blendTest(){
+                    // The colors to blend
+                    var source = { r: 255, g: 213, b: 0, a: 0.6 }
+                    var backdrop = { r: 141, g: 214, b: 214, a: 0.6 }
+
+                    // This example shows the result of blending 'source' and 'backdrop' with the 'hue' blending mode, according to the W3C or Adobe spec
+                    // However the composite could also be calculated by 'saturation', 'color' or 'luminosity' mode
+                    var composite = { r: 151, g: 224, b: 224 }
+
+                    // The mentioned colour compositing formula as a function
+                    var colourCompositingFormula = function(AS, ab, ar, Cs, Cb, Bbs) {
+                        return (1 - (AS / ar)) * Cb + (AS / ar) * Math.round((1 - ab) * Cs + ab * Bbs);
+                    }
+
+                    // Calculate the opacity of the result
+                    var resultingAlpha = source.a + backdrop.a * (1 - source.a) // Adobe PDF Format Part 1 - page 331
+
+                    var result = {
+                        // Adobe PDF Format Part 1 - page 328
+                        r: colourCompositingFormula(source.a, backdrop.a, resultingAlpha, source.r, backdrop.r, composite.r),
+                        g: colourCompositingFormula(source.a, backdrop.a, resultingAlpha, source.g, backdrop.g, composite.g),
+                        b: colourCompositingFormula(source.a, backdrop.a, resultingAlpha, source.b, backdrop.b, composite.b),
+                        a: resultingAlpha
+                    }
+                }
+            }
+            class Spectre {
+                constructor(waveLengths) { // un spectre lumineux est composé de longueurs d'ondes
+                    this.waveLengths = waveLengths || [];
+                }
+                get rgb() { // l'oeil humain est sensible à trois couleurs
+                    let red = 0;
+                    let green = 0;
+                    let blue = 0;
+
+                    this.waveLengths.forEach(waveLength => {
+                        // une fonction au carré inversé simplifié représentant la sensibilité d'un capteur
+                        // f(x) = - coef * ( longueur d'onde - x )² + 1
+                        let calcRed = (-coefSensibility * Math.pow(waveLength - 660, 2) + 1);
+                        if (calcRed > 0) {
+                            red += calcRed;
+                        }
+                        let calcGreen = (-coefSensibility * Math.pow(waveLength - 540, 2) + 1);
+                        if (calcGreen > 0) {
+                            green += calcGreen;
+                        }
+                        let calcBlue = (-coefSensibility * Math.pow(waveLength - 420, 2) + 1);
+                        if (calcBlue > 0) {
+                            blue += calcBlue;
+                        }
+                    });
+                    // on fait la moyenne
+
+                    red = (red / this.waveLengths.length) + luminosity;
+                    red = (red > 1) ? 1 : red;
+                    green = (green / this.waveLengths.length) + luminosity;
+                    green = (green > 1) ? 1 : green;
+                    blue = (blue / this.waveLengths.length) + luminosity;
+                    blue = (blue > 1) ? 1 : blue;
+                    return new Color(red, green, blue);
+                }
+                add(...waveLength) {
+                    this.waveLengths.push(...waveLength);
+                }
+            }
+            window.addWaveLength = function () {
+                const container = document.createElement('div');
+                const viewer = document.createElement('div');
+                viewer.className = 'view'
+                const input = document.createElement('input');
+                input.className = 'input-range';
+                input.type = 'range';
+                input.min = 0;
+                input.max = 360;
+                input.value = 0;
+                input.step = 0.1;
+                input.addEventListener('input', displayValue.bind(this, input, viewer));
+                const parent = document.getElementById('container');
+                container.appendChild(input);
+                container.appendChild(viewer);
+                parent.appendChild(container);
+            }
+            function displayValue(input, viewer) {
+                const color = new Color();
+                color.hue = parseInt(input.value, 10);
+                color.lightness = 50;
+                color.saturation = 100;
+                viewer.style.backgroundColor = color.getCssRGB(true);
+                displayMerge();
+            }
+            function displayMerge() {
+                const inputs = document.querySelectorAll('.input-range');
+                const values = [];
+                for (let i = 0; i < inputs.length; i++) {
+                    const color = new Color();
+                    color.hue = parseInt(inputs[i].value, 10);
+                    color.lightness = 50;
+                    color.saturation = 100;
+                    values.push(color);
+                }
+                const blend = new ColorsBlender(values);
+                document.getElementById('result-color').style.backgroundColor = blend.blendOpac().getCssRGB(true);
+            }
+        })()
+    </script>
+</body>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+<button onclick="play()">Play</button>
+<form>
+    <label>
+        test
+        <input type="number" min="0" name="incrs" max="100" value="0" step="0.1">
+    </label>
+  
+    </form>
+<script>
+    // for legacy browsers
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const audioCtx = new AudioContext();
+    let level = 100;
+    const waveShape = ['sine', 'triangle', 'square', 'sawtooth'];
+    const play = () => {
+        const oscillator = audioCtx.createOscillator();
+        oscillator.type = waveShape[0];
+        oscillator.frequency.value = level;
+        oscillator.detune.value = 10000;
+        oscillator.connect(audioCtx.destination);
+        oscillator.start();
+        /*
+        setInterval(() => {
+            oscillator.frequency.setValueAtTime(Math.round(Math.random() * 360), audioCtx.currentTime);
+        }, 200)
+        */
+    }
+</script>
+</body>
+</html>

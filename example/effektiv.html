@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+          name="viewport">
+    <meta content="ie=edge" http-equiv="X-UA-Compatible">
+    <title>Document</title>
+    <style>
+        @font-face {
+            font-family: 'niveau-grotesk';
+            src: url("https://use.typekit.net/af/2a7fcc/00000000000000003b9ad44c/27/l?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n7&v=3");
+            font-display: fallback;
+        }
+
+        .border {
+            padding: 20px;
+            border: 5px solid #d61d28;
+            display: inline-block;
+        }
+
+        #grid-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            font-family: "niveau-grotesk", sans-serif;
+            text-align: center;
+        }
+
+        #grid-container .cell {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            font-size: 30px;
+            color: #d61d28;
+            user-select: none;
+            cursor: pointer;
+        }
+
+        #grid-container .cell.empty {
+            color: #000;
+        }
+
+        #grid-container .cell:not(.empty) {
+            transition: all 300ms ease;
+        }
+    </style>
+</head>
+<body>
+<div class="border">
+    <div id="grid-container">
+    </div>
+</div>
+<div class="d-flex">
+    <button class="btn btn-primary" onclick="melange()">Mélanger</button>
+    <button class="btn btn-primary" onclick="toggleAnimation()">Auto play</button>
+</div>
+<script>
+    const logoEffektiv = [
+        'E', 'F', 'F',
+        'E', 'K', 'T',
+        'I', 'V', '.'
+    ];
+
+    class Cell {
+        constructor(display, empty, element) {
+            this.x = 0;
+            this.y = 0;
+            this.display = display;
+            this.empty = empty;
+            this.north = null;
+            this.west = null;
+            this.south = null;
+            this.east = null;
+            this.element = element;
+        }
+
+        setPosition(x, y) {
+            this.x = x;
+            this.y = y;
+            this.element.setAttribute('data-x', x);
+            this.element.setAttribute('data-y', y);
+            this.element.style.left = (this.x * 40) + 'px';
+            this.element.style.top = (this.y * 40) + 'px';
+        }
+
+        setPositionFromCell(cell) {
+            this.setPosition(cell.x, cell.y);
+        }
+
+        takeNorth() {
+            if (this.north) {
+                this.setPositionFromCell(this.north);
+                if (!this.north.empty) {
+                    this.north.takeNorth();
+                }
+            }
+        }
+
+        takeWest() {
+            if (this.west) {
+                this.setPositionFromCell(this.west);
+                if (!this.west.empty) {
+                    this.west.takeWest();
+                }
+            }
+        }
+
+        takeSouth() {
+            if (this.south) {
+                this.setPositionFromCell(this.south);
+                if (!this.south.empty) {
+                    this.south.takeSouth();
+                }
+            }
+        }
+
+        takeEast() {
+            if (this.east) {
+                this.setPositionFromCell(this.east);
+                if (!this.east.empty) {
+                    this.east.takeEast();
+                }
+            }
+        }
+
+        canGoNorth() {
+            if (this.empty) return this;
+            if (this.north) {
+                return this.north.canGoNorth();
+            }
+        }
+
+        canGoWest() {
+            if (this.empty) return this;
+            if (this.west) {
+                return this.west.canGoWest();
+            }
+        }
+
+        canGoSouth() {
+            if (this.empty) return this;
+            if (this.south) {
+                return this.south.canGoSouth();
+            }
+        }
+
+        canGoEast() {
+            if (this.empty) return this;
+            if (this.east) {
+                return this.east.canGoEast();
+            }
+        }
+    }
+
+    class Table {
+        constructor(cols, cells) {
+            this.cols = cols;
+
+            this.cells = cells.map((c, index) => {
+                c.setPosition(index % cols, Math.floor(index / cols));
+                return c;
+            });
+            this.update();
+        }
+
+        getCell(x, y) {
+            return this.cells.find((c) => {
+                return c.x === x && c.y === y;
+            })
+        }
+
+        move(x, y) {
+            const cell = this.getCell(x, y);
+            if (!cell || cell.empty) {
+                return;
+            }
+            let success;
+
+            success = this.moveCell(cell, 'north');
+            if (!success) {
+                success = this.moveCell(cell, 'west');
+            }
+            if (!success) {
+                success = this.moveCell(cell, 'south');
+            }
+            if (!success) {
+                this.moveCell(cell, 'east');
+            }
+            this.update();
+        }
+
+        moveCell(cell, direction) {
+            const originX = cell.x;
+            const originY = cell.y;
+            switch (direction) {
+                case 'north' :
+                    const emptyNorthCell = cell.canGoNorth();
+                    if (emptyNorthCell) {
+                        cell.takeNorth();
+                        emptyNorthCell.setPosition(originX, originY);
+                        return true;
+                    }
+                    break;
+                case 'west' :
+                    const emptyWestCell = cell.canGoWest();
+                    if (emptyWestCell) {
+                        cell.takeWest();
+                        emptyWestCell.setPosition(originX, originY);
+                        return true;
+                    }
+                    break;
+                case 'south' :
+                    const emptySouthCell = cell.canGoSouth();
+                    if (emptySouthCell) {
+                        cell.takeSouth();
+                        emptySouthCell.setPosition(originX, originY);
+                        return true;
+                    }
+                    break;
+                case 'east' :
+                    const emptyEastCell = cell.canGoEast();
+                    if (emptyEastCell) {
+                        cell.takeEast();
+                        emptyEastCell.setPosition(originX, originY);
+                        return true;
+                    }
+                    break;
+            }
+        }
+
+        update() {
+            this.cells.forEach((c) => {
+                c.north = this.getCell(c.x, c.y - 1);
+                c.west = this.getCell(c.x + 1, c.y);
+                c.south = this.getCell(c.x, c.y + 1);
+                c.east = this.getCell(c.x - 1, c.y);
+            });
+        }
+
+    }
+
+    const container = document.getElementById('grid-container');
+    const cellsSet = logoEffektiv.map((d) => {
+        const element = document.createElement('span');
+        element.innerText = d;
+        element.className = 'cell' + ((d === '.') ? ' empty' : '');
+        container.appendChild(element);
+        return new Cell(d, (d === '.'), element);
+    });
+    const table = new Table(3, cellsSet);
+    container.addEventListener('click', ($event) => {
+        const target = $event.target;
+        const tx = target.getAttribute('data-x');
+        const ty = target.getAttribute('data-y');
+        table.move(parseInt(tx, 10), parseInt(ty, 10));
+    });
+    const animation = () => {
+        return setInterval(() => {
+            table.move(Math.round(Math.random() * 3), Math.round(Math.random() * 3))
+        }, 300);
+    };
+    let toggleAnim = false;
+    let animIndex;
+    window.toggleAnimation = () => {
+        toggleAnim = !toggleAnim;
+        if (toggleAnim) {
+            animIndex = animation();
+        } else {
+            clearInterval(animIndex);
+        }
+    };
+    window.melange = () => {
+        setTimeout(() => {
+            const blender = setInterval(() => {
+                table.move(Math.round(Math.random() * 3), Math.round(Math.random() * 3))
+            }, 10);
+            setTimeout(() => {
+                clearInterval(blender);
+            }, 10000)
+        }, 1000);
+    }
+</script>
+</body>
+</html>

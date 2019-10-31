@@ -1,0 +1,1 @@
+"use strict";Object.defineProperty(exports,"__esModule",{value:!0}),exports.NeuralNetwork=void 0;class NeuralNetwork{constructor(a,b){this.a=a,this.b=b,console.log(a)}}exports.NeuralNetwork=NeuralNetwork;

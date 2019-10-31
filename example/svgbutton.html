@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+<a class="1" href="#test">1</a>
+<a class="to-svg btn" href="#test">Bonjour</a>
+<a class="2" href="#aset">2</a>
+<script>
+    const queryElementToSvg = document.querySelectorAll('a.to-svg');
+    /**
+     *
+     * @param el {Element}
+     */
+    const transformElement = (el) => {
+        const SVG = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        const SVG_NS = SVG.namespaceURI;
+        const PARENT = el.parentNode;
+        const BOX = el.getBoundingClientRect();
+        const width = BOX.width.toString(10);
+        const height = BOX.height.toString(10);
+        SVG.setAttribute('version', '1.2');
+        SVG.setAttribute('viewBox', "0 0 " + width + " " + height);
+        SVG.setAttribute('width', width);
+        SVG.setAttribute('height', height);
+        SVG.setAttribute('xmlns:xlink', el.getAttribute('href'));
+        const anchor = document.createElementNS(SVG_NS, 'a');
+        anchor.setAttribute('href', el.getAttribute('href'));
+        const path = document.createElementNS(SVG_NS, 'path');
+        path.setAttribute('d', `M   0  10
+               L  50  10
+               L  60   0
+               L  70  10
+               L 120  10
+               L 120 120
+               L  60  80
+               L   0 120
+               Z`);
+        path.setAttribute('fill', '#007BFF');
+        const textBox = document.createElementNS(SVG_NS, 'text');
+        textBox.textContent = el.textContent;
+        textBox.setAttribute('fill', '#fff');
+        textBox.setAttribute('text-anchor', 'middle');
+        textBox.setAttribute('alignment-baseline', 'middle');
+        textBox.setAttribute('x', '50%');
+        textBox.setAttribute('y', '50%');
+        anchor.appendChild(path);
+        anchor.appendChild(textBox);
+        SVG.appendChild(anchor);
+        PARENT.replaceChild(SVG, el);
+    };
+    for (let i = 0; i < queryElementToSvg.length; i++) {
+        transformElement(queryElementToSvg[i]);
+    }
+
+</script>
+</body>
+</html>
